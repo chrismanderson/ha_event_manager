@@ -14,14 +14,26 @@ class EventManager
 
   def print_numbers
     @file.each do |line|
-      puts clean_number(line[:homephone])
+      number = clean_number(line[:homephone])
+      puts number
     end
   end
 
   def clean_number(number)
-    number.gsub(/[^\d]/, '')
+    number.gsub!(/[^\d]/, '')
+    if number.length == 10
+      # do nothing
+    elsif number.length == 11
+      if number.start_with?("1")
+        number = number[1..-1]
+      else
+        number = "0000000000"
+      end
+    else
+      number = "0000000000"
+    end
+    return number
   end
-
 end
 
 manager = EventManager.new
