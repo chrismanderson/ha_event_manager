@@ -108,10 +108,29 @@ class EventManager
     end
   end
   
+  def rank_times
+    hours = Array.new(24){0}
+    @file.each do |line|
+      time = line[:regdate].split(" ")[1]
+      hour = time.split(":")[0]
+      hours[hour.to_i] = hours[hour.to_i] + 1
+    end
+    hours.each_with_index{|counter,hour| puts "#{hour}\t#{counter}"}
+  end
   
+  def day_stats
+    days = Array.new(7){0}
+    @file.each do |line|
+      date = line[:regdate].split(" ")[0]
+      date = Date.strptime(date, "%m/%d/%Y").wday
+      days[date] += 1
+    end
+    days.each_with_index{|counter,date| puts "#{date}\t#{counter}"}
+  end	
+        
 end
 
 manager = EventManager.new("event_attendees.csv")
-manager.rep_lookup
-manager.create_form_letters
-manager.output_data("event_attendees_clean.csv")
+manager.rank_times
+
+
