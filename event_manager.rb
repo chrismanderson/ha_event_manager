@@ -1,11 +1,14 @@
 require "csv"
+require "sunlight"
 
 class EventManager
   INVALID_ZIPCODE = "00000"
+  INVALID_PHONE_NUMBER = "0000000000"
+  Sunlight::Base.api_key = "e179a6973728c4dd3fb1204283aaccb5"
   
-  def initialize
+  def initialize(filename)
     puts "EventManager Initialized."
-    @file = CSV.open("event_attendees.csv", {:headers => true, :header_converters => :symbol})
+    @file = CSV.open(filename, {:headers => true, :header_converters => :symbol})
   end
 
   def print_names
@@ -28,10 +31,10 @@ class EventManager
       if number.start_with?("1")
         number = number[1..-1]
       else
-        number = "0000000000"
+        number = INVALID_PHONE_NUMBER
       end
     else
-      number = "0000000000"
+      number = INVALID_PHONE_NUMBER
     end
     return number
   end
@@ -55,7 +58,41 @@ class EventManager
     return result
   end
   
+  def output_data(filename)
+    output = CSV.open(filename, "w")
+    @file.each do |line|
+      if @file.lineno == 0
+        output << line.headers
+      else
+        line[:homephone] = clean_number(line[:homephone])
+        line[:zipcode] = clean_zipcode(line[:zipcode])
+        output << line
+      end
+    end
+  end
+  
+  def rep_lookup
+    # prevents killing the API
+    20.times do
+      line = @file.readline
+      legislators = Sunlight::Legislator.all_in_zipcode(clean_zipcode(line[:zipcode]))
+      names = legislators.collect do |leg|
+        first_name = leg.firstname
+        first_initial = first_name[0]
+        last_name = leg.lastname
+        party = leg.party
+        title = leg.title
+        title + " " + first_initial + ". " + last_name + " (#{party})"
+      end
+      
+      representative = "unknown"
+      # API lookup goes here
+      puts "#{line[:last_name]}, #{line[:first_name]}, #{line[:zipcode]}, #{names.join(", ")}"
+      
+    end
+  end
 end
 
-manager = EventManager.new
-manager.print_zipcodes
+manager = EventManager.new("event_attendees.csv")
+manager.rep_lookup
+manager.output_data("event_attendees_clean.csv")
