@@ -4,6 +4,7 @@ require "sunlight"
 class EventManager
   INVALID_ZIPCODE = "00000"
   INVALID_PHONE_NUMBER = "0000000000"
+  INVALID_STATE = "AA"
   Sunlight::Base.api_key = "e179a6973728c4dd3fb1204283aaccb5"
   
   def initialize(filename)
@@ -127,10 +128,33 @@ class EventManager
     end
     days.each_with_index{|counter,date| puts "#{date}\t#{counter}"}
   end	
+  
+  def state_stats
+    state_data = {}
+    @file.each do |line|
+      state = line[:state]  # Find the State
+      if state.nil?
+        state = INVALID_STATE
+      end
+      
+      if state_data[state].nil? # Does the state's bucket exist in state_data?
+        state_data[state] = 1 # If that bucket was nil then start it with this one person
+      else
+        state_data[state] = state_data[state] + 1  # If the bucket exists, add one
+      end
+    end
+    
+    ranks = state_data.sort_by{|state, counter| counter}.collect{|state, counter| state}.reverse
+    state_data = state_data.sort_by{|state, counter| state}
+
+    state_data.each do |state, counter|
+      puts "#{state}:\t#{counter}\t(#{ranks.index(state) + 1})"
+    end
+  end
         
 end
 
 manager = EventManager.new("event_attendees.csv")
-manager.rank_times
+manager.state_stats
 
 
